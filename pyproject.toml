@@ -4,4 +4,39 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "aiohttp>=3.13.2",
+    "numpy>=2.3.5",
+    "pillow>=12.0.0",
+    "requests>=2.32.5",
+    "ruff>=0.14.8",
+]
+
+[tool.ruff]
+fix = true
+line-length = 79
+
+[tool.ruff.lint]
+select= ["E","F","PL","W"]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "auto"
+
+[tool.pytest.ini_options]
+log_cli= true
+log_cli_level = "INFO"
+
+[tool.pylint.MAIN]
+init-hook = """
+try: import pylint_venv
+except ImportError: pass
+else: pylint_venv.inithook()
+"""
+[tool.djlint]
+format_js=true
+format_css=true
+profile="jinja"
+max_line_length=80
+
