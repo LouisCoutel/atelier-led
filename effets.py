@@ -1,18 +1,18 @@
+from abc import ABC, abstractmethod
 from _deformers import WaveDeformer
 from PIL import Image, ImageOps
 
 
-class Effet:
-    def __init__(self) -> None:
-        pass
-
+class Effet(ABC):
+    @abstractmethod
     def appliquer(self, image: Image.Image, etape: int):
-        return image
+        pass
 
 
 class Mirroir(Effet):
     def __init__(self, duree: int) -> None:
         """Inverse l'image horizontalement."""
+
         super().__init__()
         self.duree = duree
 
@@ -35,7 +35,6 @@ class Redimensionner(Effet):
         Etapes: En combien d'étapes d'animation la déformation maximale est atteinte.
         """
 
-        super().__init__()
         self.etapes = etapes
         self.facteur = facteur
         self.double_sens = double_sens
@@ -62,7 +61,6 @@ class Vague(Effet):
         Avec 12, la déformation maximale sera atteinte au bout de 12 frames
         soit 1 seconde.
         """
-        super().__init__()
         self.vertical = vertical
         self.horizontal = horizontal
         self.max = max

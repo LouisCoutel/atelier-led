@@ -25,15 +25,14 @@ def send_chunks(chunks, seq, sock, ip, port):
 def stream_ddp(
     playlist,
     affichage: Affichage,
-    fps: int = 12,
+    fps: int = 24,
     port: int = 4048,
 ):
     try:
         seq = 0
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         for frame in playlist:
-            chunks = frame.decouper()
-            send_chunks(chunks, seq, sock, affichage.ip, port)
+            send_chunks(frame.blocs, seq, sock, affichage.ip, port)
 
             seq = (seq + 1) % 255
 
