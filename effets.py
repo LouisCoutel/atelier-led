@@ -1,12 +1,74 @@
+import colorsys
 from abc import ABC, abstractmethod
 from _deformers import WaveDeformer
-from PIL import Image, ImageOps
+import numpy as np
+from PIL import Image, ImageOps, ImageChops
 
 
 class Effet(ABC):
     @abstractmethod
     def appliquer(self, image: Image.Image, etape: int):
         pass
+
+
+class Defilement(Effet):
+    def __init__(
+        self, duree: int, horizontal: bool, vertical: bool, vitesse: int = 1
+    ) -> None:
+        """Inverse l'image horizontalement."""
+
+        super().__init__()
+        self.duree = duree
+        self.horizontal = horizontal
+        self.vertical = vertical
+        self.vitesse = vitesse
+
+    def appliquer(self, image: Image.Image, etape: int):
+        xoffset = self.vitesse * etape if self.horizontal else 0
+        yoffset = self.vitesse * etape if self.vertical else 0
+
+        return ImageChops.offset(image, xoffset, yoffset)
+
+
+class Negatif(Effet):
+    def __init__(self, duree: int) -> None:
+        """Inverse l'image horizontalement."""
+
+        super().__init__()
+        self.duree = duree
+
+    def appliquer(self, image: Image.Image, etape: int):
+        image = image.convert("RGB")
+        return ImageOps.invert(image)
+
+
+rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
+hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
+
+
+class HueShift(Effet):
+    def __init__(self, duree: int, vitesse: int = 1) -> None:
+        """Inverse l'image horizontalement."""
+
+        super().__init__()
+        self.duree = duree
+        self.vitesse = vitesse
+
+    def appliquer(self, image: Image.Image, etape: int):
+        largeur, hauteur = image.size
+        image = image.convert("RGBA")
+        donnees = np.array(image.getdata()) / 256
+        r, g, b, a = np.rollaxis(donnees, -1)
+        h, s, v = rgb_to_hsv(r, g, b)
+        shift = (etape + self.vitesse) / 360
+        h = h + shift
+        h = h % 1
+
+        r, g, b = hsv_to_rgb(h, s, v)
+        donnees = np.dstack((r, g, b, a)) * 256
+        donnees = donnees.reshape((hauteur, largeur, 4)).astype(np.uint8)
+
+        return Image.fromarray(donnees, "RGBA")
 
 
 class Mirroir(Effet):

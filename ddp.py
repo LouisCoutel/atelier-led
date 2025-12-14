@@ -25,7 +25,7 @@ def send_chunks(chunks, seq, sock, ip, port):
 def stream_ddp(
     playlist,
     affichage: Affichage,
-    fps: int = 24,
+    fps: int = 12,
     port: int = 4048,
 ):
     try:

@@ -28,7 +28,7 @@ class CouleurUnie(Animation):
         """
 
         image = Image.new(mode="RGBA", size=limites, color=self.couleur)
-        n_etapes = 24 * duree if duree else None
+        n_etapes = 12 * duree if duree else None
         etape = 0
         while True:
             if n_etapes is not None:
@@ -52,7 +52,7 @@ class Strobe(Animation):
     def generer(self, duree: int | None, limites: tuple[int, int]):
         image_1 = Image.new(mode="RGBA", size=limites, color=self.couleur_1)
         image_2 = Image.new(mode="RGBA", size=limites, color=self.couleur_2)
-        n_etapes = 24 * duree if duree else None
+        n_etapes = 12 * duree if duree else None
         etape = 0
         while True:
             if n_etapes is not None:
@@ -65,6 +65,13 @@ class Strobe(Animation):
             )
             yield a_afficher
             etape += 1
+
+
+class TextureAnimee(Animation):
+    def __init__(self, nom: str, couleurs) -> None:
+        self.nom = nom
+        self.effets = []
+        self.couleurs = couleurs
 
 
 class SpriteAnimee(Animation):
@@ -80,7 +87,6 @@ class SpriteAnimee(Animation):
         self.nom = nom
         self.effets = []
         self.sprites = []
-        self.frames = []
 
     def ajouter_effet(self, effet: Effet):
         self.effets.append(effet)
@@ -100,7 +106,7 @@ class SpriteAnimee(Animation):
         """Applique les effets et renvoie l'image finale au player
         pour chaque frame de l'animation."""
 
-        n_etapes = 24 * duree if duree else None
+        n_etapes = 12 * duree if duree else None
         etape = 0
         while True:
             if n_etapes is not None:

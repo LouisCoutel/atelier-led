@@ -8,15 +8,27 @@ import numpy as np
 from PIL import Image
 
 
-class Sprite:
-    """Une sprite est une image en pixel-art."""
-
-    def __init__(self, fichier):
+class FichierImage:
+    def __init__(self, fichier) -> None:
         self.fichier = fichier
 
         with Image.open(fichier) as img:
             self.largeur = img.width
             self.hauteur = img.height
+
+
+class Sprite(FichierImage):
+    """Une sprite est une image en pixel-art."""
+
+    def __init__(self, fichier):
+        super().__init__(fichier)
+
+
+class Texture(FichierImage):
+    """Une texture est une image représentant un motif répétable à l'infini"""
+
+    def __init__(self, fichier):
+        super().__init__(fichier)
 
 
 def _rogner_depuis_centre(
