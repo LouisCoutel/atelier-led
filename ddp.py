@@ -1,8 +1,8 @@
-import time
 import logging
 import socket
 import struct
 
+from asyncio import sleep
 from asyncio.exceptions import CancelledError
 from aiohttp import ClientConnectionResetError
 
@@ -22,10 +22,10 @@ def send_chunks(chunks, seq, sock, ip, port):
         send_ddp_frame(data, seq, offset, sock, ip, port)
 
 
-def stream_ddp(
+async def stream_ddp(
     playlist,
     affichage: Affichage,
-    fps: int = 12,
+    fps: int = 24,
     port: int = 4048,
 ):
     try:
@@ -36,7 +36,7 @@ def stream_ddp(
 
             seq = (seq + 1) % 255
 
-            time.sleep(1 / fps)
+            await sleep(1 / fps)
 
     except CancelledError:
         logging.info("Websocket was closing.")

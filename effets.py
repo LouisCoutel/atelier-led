@@ -1,5 +1,6 @@
 import colorsys
 from abc import ABC, abstractmethod
+import logging
 from _deformers import WaveDeformer
 import numpy as np
 from PIL import Image, ImageOps, ImageChops
