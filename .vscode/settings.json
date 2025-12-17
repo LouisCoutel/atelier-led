@@ -1,4 +1,7 @@
 {
     "workbench.colorTheme": "Ayu Mirage Bordered",
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "workbench.colorCustomizations": {},
+    "chat.disableAIFeatures": true,
+    "github.copilot.enable": false,
 }
