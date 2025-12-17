@@ -1,76 +1,16 @@
 import asyncio
+import logging
 from functools import reduce
 from itertools import chain
-import logging
 from types import FunctionType
 from typing import Generator
 
 from PIL import Image
-from affichage import Affichage
 
-from ddp import stream_ddp
-from images import Frame
-from animations import Animation
-
-
-def _duree(plan: list[tuple[Animation, int]]) -> int:
-    if len(plan) > 0:
-        durees = tuple(item[1] for item in plan)
-        return reduce(lambda duree_1, duree_2: duree_1 + duree_2, durees)
-
-    return 0
-
-
-def _transparent(limites: tuple[int, int]) -> Image.Image:
-    image = Image.new("RGB", limites, "BLACK")
-    image.putalpha(0)
-
-    return image
-
-
-def _generer_transparent(
-    n_frames: int, limites: tuple[int, int]
-) -> Generator[Image.Image, None, None] | None:
-    return (_transparent(limites) for i in range(n_frames))
-
-
-def _noir(limites: tuple[int, int]) -> Image.Image:
-    image = Image.new("RGB", limites, "BLACK")
-
-    return image
-
-
-def _generer_noir(
-    n_frames: int, limites: tuple[int, int]
-) -> Generator[Image.Image, None, None] | None:
-    return (_noir(limites) for i in range(n_frames))
-
-
-def _generer_plan(
-    plan: list[tuple[Animation, int]], limites: tuple[int, int]
-) -> Generator[Image.Image, None, None] | None:
-    return (
-        frame
-        for (animation, duree) in plan
-        for frame in animation.generer(duree, limites)
-    )
-
-
-def _generer_et_combler(
-    plan: list[tuple[Animation, int]],
-    limites: tuple[int, int],
-    frames_manquantes: int,
-    pour_combler: FunctionType,
-) -> chain[Image.Image]:
-    generateur = _generer_plan(plan, limites)
-    return (
-        chain(
-            generateur,
-            pour_combler(frames_manquantes, limites),
-        )
-        if generateur is not None
-        else pour_combler(frames_manquantes, limites)
-    )
+from api.affichage import Affichage
+from api.animations import Animation
+from api.frames import Frame
+from reseau.ddp import stream_ddp
 
 
 class Player:
@@ -136,3 +76,63 @@ class Player:
                 affichage=self.affichage,
             )
         )
+
+
+def _duree(plan: list[tuple[Animation, int]]) -> int:
+    if len(plan) > 0:
+        durees = tuple(item[1] for item in plan)
+        return reduce(lambda duree_1, duree_2: duree_1 + duree_2, durees)
+
+    return 0
+
+
+def _transparent(limites: tuple[int, int]) -> Image.Image:
+    image = Image.new("RGB", limites, "BLACK")
+    image.putalpha(0)
+
+    return image
+
+
+def _generer_transparent(
+    n_frames: int, limites: tuple[int, int]
+) -> Generator[Image.Image, None, None] | None:
+    return (_transparent(limites) for i in range(n_frames))
+
+
+def _noir(limites: tuple[int, int]) -> Image.Image:
+    image = Image.new("RGB", limites, "BLACK")
+
+    return image
+
+
+def _generer_noir(
+    n_frames: int, limites: tuple[int, int]
+) -> Generator[Image.Image, None, None] | None:
+    return (_noir(limites) for i in range(n_frames))
+
+
+def _generer_plan(
+    plan: list[tuple[Animation, int]], limites: tuple[int, int]
+) -> Generator[Image.Image, None, None] | None:
+    return (
+        frame
+        for (animation, duree) in plan
+        for frame in animation.generer(duree, limites)
+    )
+
+
+def _generer_et_combler(
+    plan: list[tuple[Animation, int]],
+    limites: tuple[int, int],
+    frames_manquantes: int,
+    pour_combler: FunctionType,
+) -> chain[Image.Image]:
+    generateur = _generer_plan(plan, limites)
+    return (
+        chain(
+            generateur,
+            pour_combler(frames_manquantes, limites),
+        )
+        if generateur is not None
+        else pour_combler(frames_manquantes, limites)
+    )

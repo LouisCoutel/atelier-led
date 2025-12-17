@@ -12,7 +12,7 @@ class AppareilIntrouvable(Exception):
 class Affichage:
     """Les infos de l'appareil LED."""
 
-    def __init__(self, ip):
+    def __init__(self, ip: str) -> None:
         res = requests.get(url=f"http://{ip}/json/info")
         if res.status_code == 200:
             infos_matrice = res.json()

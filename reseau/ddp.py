@@ -6,7 +6,7 @@ from asyncio import sleep
 from asyncio.exceptions import CancelledError
 from aiohttp import ClientConnectionResetError
 
-from affichage import Affichage
+from api.affichage import Affichage
 
 
 def ddp_header(sequence_number: int, offset: int, packet_size: int):

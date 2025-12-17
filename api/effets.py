@@ -1,14 +1,16 @@
 import colorsys
-from abc import ABC, abstractmethod
 import logging
-from _deformers import WaveDeformer
+from abc import ABC, abstractmethod
+
 import numpy as np
-from PIL import Image, ImageOps, ImageChops
+from PIL import Image, ImageChops, ImageOps
+
+from _deformers import WaveDeformer
 
 
 class Effet(ABC):
     @abstractmethod
-    def appliquer(self, image: Image.Image, etape: int):
+    def appliquer(self, image: Image.Image, etape: int) -> Image.Image:
         pass
 
 
@@ -18,7 +20,6 @@ class Defilement(Effet):
     ) -> None:
         """Inverse l'image horizontalement."""
 
-        super().__init__()
         self.duree = duree
         self.horizontal = horizontal
         self.vertical = vertical
@@ -41,6 +42,33 @@ class Negatif(Effet):
     def appliquer(self, image: Image.Image, etape: int):
         image = image.convert("RGB")
         return ImageOps.invert(image)
+
+
+def fill(rgba, couleur: list):
+    logging.warning("!")
+    logging.warning(rgba)
+    if rgba[3] != 0:
+        return couleur + [rgba[3]]
+    return rgba
+
+
+v_fill = np.vectorize(fill)
+
+
+class Contour(Effet):
+    def __init__(self, couleur) -> None:
+        self.couleur = couleur
+
+    def appliquer(self, image: Image.Image, etape: int):
+        image = image.convert("RGBA")
+        nouvelle_taille = (image.width + 4, image.height + 4)
+        rectangle = Image.new("RGBA", image.size, "BLACK")
+        nouvelle_image = image.copy()
+        nouvelle_image.paste(rectangle, mask=nouvelle_image)
+        nouvelle_image = nouvelle_image.resize(nouvelle_taille)
+        nouvelle_image.paste(image, (2, 2), mask=image)
+
+        return nouvelle_image
 
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
