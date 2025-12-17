@@ -1,12 +1,10 @@
-import logging
 import requests
 
 
 class AppareilIntrouvable(Exception):
     def __init__(self) -> None:
-        super().__init__(
-            "L'appareil ne répond pas. Vérifiez que l'IP est correcte."
-        )
+        super().__init__()
+        print("L'appareil ne répond pas. Vérifiez que l'IP est correcte.")
 
 
 class Affichage:
@@ -14,6 +12,7 @@ class Affichage:
 
     def __init__(self, ip: str) -> None:
         res = requests.get(url=f"http://{ip}/json/info")
+
         if res.status_code == 200:
             infos_matrice = res.json()
 
@@ -23,6 +22,6 @@ class Affichage:
             self.n_pixels = self.largeur * self.hauteur
             self.taille = (self.largeur, self.hauteur)
 
-            logging.info(f"Infos de l'appareil {ip} récupérées.")
+            print(f"Infos de l'appareil {ip} récupérées.")
         else:
             raise AppareilIntrouvable()

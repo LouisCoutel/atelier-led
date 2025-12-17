@@ -1,11 +1,8 @@
 import colorsys
-import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
 from PIL import Image, ImageChops, ImageOps
-
-from _deformers import WaveDeformer
 
 
 class Effet(ABC):
@@ -18,7 +15,7 @@ class Defilement(Effet):
     def __init__(
         self, duree: int, horizontal: bool, vertical: bool, vitesse: int = 1
     ) -> None:
-        """Inverse l'image horizontalement."""
+        """Fait défiler l'image"""
 
         self.duree = duree
         self.horizontal = horizontal
@@ -33,9 +30,9 @@ class Defilement(Effet):
 
 
 class Negatif(Effet):
-    def __init__(self, duree: int) -> None:
-        """Inverse l'image horizontalement."""
+    """Passe les couleurs en négatif"""
 
+    def __init__(self, duree: int) -> None:
         super().__init__()
         self.duree = duree
 
@@ -44,51 +41,21 @@ class Negatif(Effet):
         return ImageOps.invert(image)
 
 
-def fill(rgba, couleur: list):
-    logging.warning("!")
-    logging.warning(rgba)
-    if rgba[3] != 0:
-        return couleur + [rgba[3]]
-    return rgba
-
-
-v_fill = np.vectorize(fill)
-
-
-class Contour(Effet):
-    def __init__(self, couleur) -> None:
-        self.couleur = couleur
-
-    def appliquer(self, image: Image.Image, etape: int):
-        image = image.convert("RGBA")
-        nouvelle_taille = (image.width + 4, image.height + 4)
-        rectangle = Image.new("RGBA", image.size, "BLACK")
-        nouvelle_image = image.copy()
-        nouvelle_image.paste(rectangle, mask=nouvelle_image)
-        nouvelle_image = nouvelle_image.resize(nouvelle_taille)
-        nouvelle_image.paste(image, (2, 2), mask=image)
-
-        return nouvelle_image
-
-
-rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
-hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
-
-
 class HueShift(Effet):
-    def __init__(self, duree: int, vitesse: int = 1) -> None:
-        """Inverse l'image horizontalement."""
+    def __init__(self, vitesse: int = 1) -> None:
+        """Fait passer l'image a travers les couleurs de l'arc-en-ciel"""
 
         super().__init__()
-        self.duree = duree
         self.vitesse = vitesse
 
     def appliquer(self, image: Image.Image, etape: int):
         largeur, hauteur = image.size
         image = image.convert("RGBA")
         donnees = np.array(image.getdata()) / 256
+
         r, g, b, a = np.rollaxis(donnees, -1)
         h, s, v = rgb_to_hsv(r, g, b)
+
         shift = (etape + self.vitesse) / 360
         h = h + shift
         h = h % 1
@@ -139,25 +106,5 @@ class Redimensionner(Effet):
         )
 
 
-class Vague(Effet):
-    def __init__(
-        self, vertical: bool, horizontal: bool, max: int, etapes: int
-    ) -> None:
-        """Déformation de l'image en vagues ou ondulations.
-        Vertical: active la déformation dans le sens de la hauteur.
-        Horizontal: dans le sens de la largeur.
-        Max: L'intensité maximale de la déformation
-        Etapes: En combien d'étapes d'animation la déformation maximale est atteinte.
-        Avec 1, la déformation est instantanée et constante.
-        Avec 12, la déformation maximale sera atteinte au bout de 12 frames
-        soit 1 seconde.
-        """
-        self.vertical = vertical
-        self.horizontal = horizontal
-        self.max = max
-        self.etapes = etapes
-
-    def appliquer(self, image: Image.Image, etape: int = 1):
-        return ImageOps.deform(
-            image, WaveDeformer(x_dir=self.horizontal, y_dir=self.vertical)
-        )
+rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
+hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)

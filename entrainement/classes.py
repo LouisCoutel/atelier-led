@@ -2,9 +2,9 @@ MAJORITE = 18
 
 
 class Personne:
-    def __init__(self, prenom: str, nom: str, age: int):
-        self.prenom = prenom
+    def __init__(self, nom: str, prenom: str, age: int):
         self.nom = nom
+        self.prenom = prenom
         self.age = age
         self.majeur = self.verifier_si_majeur()
 
@@ -12,4 +12,13 @@ class Personne:
         return self.age >= MAJORITE
 
     def se_presenter(self):
-        print(f"Je m'appelle {self.prenom} {self.nom} et j'ai {self.age} ans.")
+        message = (
+            "Bonjour, je m'appelle "
+            + self.prenom
+            + " "
+            + self.nom
+            + ", j'ai "
+            + str(self.age)
+            + " ans."
+        )
+        print(message)

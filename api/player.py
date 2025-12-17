@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from functools import reduce
 from itertools import chain
 from types import FunctionType
@@ -50,7 +49,6 @@ class Player:
 
     def _tout_generer(self):
         frames_manquantes_ap, frames_manquantes_pp = self._frames_manquantes
-        logging.warning(frames_manquantes_ap)
 
         rendu_arriere_plan = _generer_et_combler(
             self.arriere_plan,

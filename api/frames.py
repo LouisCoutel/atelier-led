@@ -25,10 +25,6 @@ class Frame:
 
     @property
     def blocs(self):
-        """On sépare les données en blocs de maximum 480 valeurs,
-        pour éviter de saturer la matrice de LED
-        en envoyant trop d'informations"""
-
         return np.array_split(self.donnees, np.ceil(len(self.donnees) / 480))
 
 

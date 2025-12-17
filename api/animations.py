@@ -1,4 +1,3 @@
-import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -26,7 +25,8 @@ class CouleurUnie(Animation):
 
     def __init__(self, couleur: str | tuple[int, int, int]):
         self.couleur = couleur
-        logging.info("Animation de couleur unie créée.")
+
+        print("Animation de couleur unie créée.")
 
     def generer(self, duree: int, limites: tuple[int, int]):
         """Crée une nouvelle image et la donne au player
@@ -43,6 +43,8 @@ class CouleurUnie(Animation):
 
 
 class Strobe(Animation):
+    """Un clignotement stroboscopique entre deux couleurs"""
+
     def __init__(
         self,
         vitesse: int,
@@ -53,7 +55,7 @@ class Strobe(Animation):
         self.couleur_2 = couleur_2
         self.vitesse = vitesse
 
-        logging.info("Animation stroboscopique créée.")
+        print("Animation stroboscopique créée.")
 
     def generer(self, duree: int, limites: tuple[int, int]):
         image_1 = Image.new(mode="RGBA", size=limites, color=self.couleur_1)
@@ -72,52 +74,37 @@ class Strobe(Animation):
             etape += 1
 
 
-def shift(n: float, x: float, max: float) -> float:
-    return (n + x) % max
-
-
-v_shift = np.vectorize(shift)
-
-
 class Radial(Animation):
-    def __init__(self, couleurs: list[tuple[int, int, int]]):
+    """Des cercles de couleurs qui s'étendent"""
+
+    def __init__(
+        self,
+        couleurs: list[tuple[int, int, int]],
+        inverse: bool = False,
+    ):
+        self.inverse = inverse
         self.couleurs = couleurs
-        logging.info("Animation radiale créée.")
+        self.couleurs_etendues = _couleurs_etendues(self.couleurs)
+
+        print("Animation radiale créée.")
 
     def generer(self, duree: int, limites: tuple[int, int]):
+        dir = 1 if self.inverse else -1
         matrice_originelle = self._creer_matrice(limites)
 
         n_etapes = 24 * duree
         etape = 0
 
         while etape < n_etapes:
-            matrice = v_shift(matrice_originelle, etape / 40, 1.0)
-            pixels = self._appliquer_couleurs(matrice)
-            image = Image.fromarray(pixels, "RGB")
+            matrice = v_shift(matrice_originelle, dir * (etape / 40), 1.0)
+            stops = _stops(self.couleurs)
+            pixels = _appliquer_couleurs(
+                self.couleurs_etendues, stops, matrice
+            )
+            image = Image.fromarray(pixels)
 
             yield image
             etape += 1
-
-    @property
-    def _couleurs_etendues(self) -> NDArray:
-        return np.vstack([self.couleurs, self.couleurs[0]])
-
-    @property
-    def _division_couleurs(self) -> NDArray:
-        return np.linspace(0, 1, self.couleurs_etendues.shape[0])
-
-    def _appliquer_couleurs(self, matrice: NDArray) -> NDArray:
-        return np.stack(
-            [
-                np.interp(
-                    matrice,
-                    self._division_couleurs,
-                    self._couleurs_etendues[:, c],
-                )
-                for c in range(3)
-            ],
-            axis=-1,
-        ).astype(np.uint8)
 
     def _creer_matrice(self, limites: tuple[int, int]) -> NDArray:
         y_coords, x_coords = np.ogrid[0 : limites[1], 0 : limites[0]]
@@ -133,19 +120,9 @@ class Radial(Animation):
         return arr.astype(np.float16)
 
 
-class TextureAnimee(Animation):
-    def __init__(
-        self, nom_fichier: str, couleurs: list[tuple[int, int, int]]
-    ) -> None:
-        self.texture = Image.open(TEXTURES / nom_fichier)
-        self.effets = []
-        self.couleurs = couleurs
-
-
-class SpriteAnimee(Animation):
-    """Une animation consiste en une série de sprites à afficher,
+class Sprites(Animation):
+    """Une série d'images affichées successivement,
     en y appliquant éventuellement des effets.
-    Les sprites sont jouées dans l'ordre d'ajout.
     Les effets sont tous appliqués à chaque sprite"""
 
     def __init__(self, nom_dossier: str):
@@ -155,6 +132,8 @@ class SpriteAnimee(Animation):
         fichiers = dossier.iterdir()
 
         self.sprites = [Image.open(fichier) for fichier in fichiers]
+
+        print("Animation de sprites créée")
 
     def ajouter_effet(self, effet: Effet):
         self.effets.append(effet)
@@ -168,7 +147,6 @@ class SpriteAnimee(Animation):
 
         while etape < n_etapes:
             image = self._appliquer_effets(etape)
-
             etape += 1
 
             yield image
@@ -181,3 +159,86 @@ class SpriteAnimee(Animation):
             sprite = effet.appliquer(sprite, etape)
 
         return sprite
+
+
+class Texture(Animation):
+    def __init__(self, nom_fichier: str, couleurs: list[tuple[int, int, int]]):
+        self.effets = []
+        self.couleurs = np.array(couleurs)
+
+        fichier = TEXTURES / nom_fichier
+        nouvelle_taille = (256, 256)
+
+        texture = Image.open(fichier).convert("L")
+        texture = texture.resize(nouvelle_taille)
+
+        matrice = np.array(texture.getdata()) / 100.0
+
+        stops = _exp_stops(self.couleurs, 0.7)
+
+        pixels = _appliquer_couleurs(self.couleurs, stops, matrice)
+        pixels = pixels.reshape((nouvelle_taille[0], nouvelle_taille[1], 3))
+
+        self.texture = Image.fromarray(pixels)
+
+        print("Animation de texture créée")
+
+    def ajouter_effet(self, effet: Effet):
+        self.effets.append(effet)
+
+    def generer(self, duree: int, limites: tuple[int, int]):
+        """Applique les effets et renvoie l'image finale au player
+        pour chaque frame de l'animation."""
+
+        n_etapes = 24 * duree
+        etape = 0
+
+        while etape < n_etapes:
+            image = self._appliquer_effets(etape, limites)
+
+            etape += 1
+
+            yield image
+
+    def _appliquer_effets(
+        self, etape: int, limites: tuple[int, int]
+    ) -> Image.Image:
+        image = self.texture
+
+        for effet in self.effets:
+            image = effet.appliquer(image, etape)
+
+        return image
+
+
+def shift(n: float, x: float, max: float) -> float:
+    return (n + x) % max
+
+
+v_shift = np.vectorize(shift)
+
+
+def _couleurs_etendues(couleurs) -> NDArray:
+    return np.vstack([couleurs, couleurs[0]])
+
+
+def _stops(couleurs) -> NDArray:
+    return np.linspace(0, 1, couleurs.shape[0])
+
+
+def _exp_stops(couleurs, facteur) -> NDArray:
+    return np.power(np.linspace(0, 1, couleurs.shape[0]), facteur)
+
+
+def _appliquer_couleurs(couleurs, stops, matrice: NDArray) -> NDArray:
+    return np.stack(
+        [
+            np.interp(
+                matrice,
+                stops,
+                couleurs[:, c],
+            )
+            for c in range(3)
+        ],
+        axis=-1,
+    ).astype(np.uint8)
